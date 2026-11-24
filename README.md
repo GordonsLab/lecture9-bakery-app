@@ -18,7 +18,8 @@ The basic layout starts with `python App1_Basic/app.py --open` at http://127.0.0
 - Enforce two days notice and 8 oven hours per pickup day.
 - Book one $100 helper per day for four additional hours.
 - View daily capacity, committed and picked-up sales, helper costs and activity history.
-- View baker/helper schedules and a Gantt chart; reverse the latest successful action with Undo.
+- Final app only: view separate baker/helper schedules and a Gantt chart. The basic app keeps the simple order desk without staff scheduling.
+- Both apps: reverse the latest successful action with Undo.
 
 Simulation begins November 23, 2026. Baking durations are used as scheduling durations. Assumed shifts are baker 9 AM-5 PM and helper 5-9 AM when extra capacity is needed; decorating, cooling and packing times are not supplied.
 

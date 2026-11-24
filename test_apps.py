@@ -84,7 +84,7 @@ class Rules(unittest.TestCase):
             self.assertEqual(self.order(a,'Moreau')['quantity'],4)
             self.assertIn('Change blocked',a.db.execute("SELECT outcome FROM messages WHERE customer='Moreau'").fetchone()[0])
     def test_person_schedules_cover_each_order_without_overlap(self):
-        for a in self.apps:
+        for a in self.apps[1:]:
             for _ in range(3): a.action('next',{})
             a.action('helper',{'day':'2026-11-28'})
             a.action('next',{})
@@ -123,4 +123,15 @@ class Rules(unittest.TestCase):
                 for key in before:
                     if key!='undoLabel': self.assertEqual(before[key],after[key])
 
+    def test_schedules_and_gantt_are_final_build_only(self):
+        basic=module('App1_Basic')
+        final=module('App2_Structured')
+        self.assertNotIn('Gantt chart',basic.PAGE)
+        self.assertNotIn('Baker schedule',basic.PAGE)
+        self.assertNotIn('schedules',self.apps[0].state())
+        self.assertIn('Gantt chart',final.PAGE)
+        self.assertIn('Baker schedule',final.PAGE)
+        self.assertIn('schedules',self.apps[1].state())
+
 if __name__=='__main__': unittest.main(verbosity=2)
+

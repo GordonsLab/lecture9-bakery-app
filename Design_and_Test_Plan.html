@@ -1,0 +1,30 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Bakery apps: design and verification</title><style>body{max-width:950px;margin:45px auto;font:17px/1.6 Segoe UI;padding:20px;color:#253b3b}pre{background:#edf3ee;padding:20px;white-space:pre-wrap}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:12px;text-align:left}</style>
+<h1>Two bakery apps</h1><p>App 1 implements the problem on PDF pages 13-17 as a simple order desk. App 2 implements pages 18-25 with a calendar board, explicit lifecycle, activity history and the design below. Both are local Python web apps with separate SQLite databases. The business rules are deliberately consistent across versions.</p>
+<h2>Implementation plan</h2><ol><li>Extract the starting orders and the seven daily message files. Ignore the unrelated Workflow Builder.</li><li>Model days, orders, imported messages and history in SQLite.</li><li>Implement fixed-rule fetching, acceptance, rejection, changes, cancellations, helper bookings and day closing.</li><li>Build the basic order desk, then the structured calendar layout.</li><li>Run isolated regression tests for the full week, with and without helper bookings. Check desktop and narrow layouts.</li></ol>
+<h2>Wireframe for App 2</h2><pre>Brand / app name                         Instructions
+Simulation date           Fetch DMs    Accept all & next day
+Action result / explanation
+Committed sales | Picked-up sales | Helper costs | Net
+Seven day cards: date / booked hours / free hours
+                accepted orders / helper button
+New requests + Accept / Reject | Incompatible + reason / Reject
+All orders and status filter
+Message outcomes / original text
+Activity history</pre>
+<h2>Data diagram</h2><pre>Days [day PK, helper flag]
+  1 -------- many Orders [id PK, customer, product, quantity,
+                          pickup FK, status, received date]
+Messages [source day + index PK, customer, raw text, outcome]
+Audit [id PK, simulation day, detail]
+Meta [key PK, value: simulation date]</pre><p>Hours, prices, day totals and order counts are derived, avoiding conflicting copies. A helper flag derives both capacity (12 hours) and cost ($100). Imported message keys prevent duplicates. Messages identify existing orders by customer and pickup date because the supplied changes contain no order IDs.</p>
+<h2>Lifecycle</h2><pre>Fetch new order -> Requested (eligible) / Incompatible (rule failed)
+Requested -> Accepted (baker accepts; rules rechecked)
+Requested / Incompatible -> Rejected (baker rejects)
+Incompatible -> Requested (capacity becomes available before deadline)
+Requested -> Incompatible (capacity fills or deadline passes)
+Accepted -> Picked up (close pickup day at 5 PM)
+Accepted / Requested / Incompatible -> Cancelled (valid cancellation)
+Valid change -> update same active order; preserve its status
+Invalid change or cancellation -> preserve order; log blocked message</pre>
+<h2>Actions and assumptions</h2><table><tr><th>Action</th><th>Checks and effect</th></tr><tr><td>Fetch</td><td>Read only today's provided HTML. New orders get an explicit eligibility state. Valid changes/cancellations apply automatically as the lecture specifies; all outcomes are logged. No live Instagram connection.</td></tr><tr><td>Accept</td><td>Check original notice and today's booking deadline; check accepted oven hours. Requested orders reserve no hours. Recheck competing requests after every acceptance.</td></tr><tr><td>Helper</td><td>At least two calendar days notice; at most one per day; 8 hours becomes 12, costs $100. Booking is final in this exercise.</td></tr><tr><td>Accept all & next day</td><td>Fetch unseen messages, accept eligible requests by arrival ID, mark accepted pickups complete at 5 PM, advance one calendar day. Blocked requests remain visible. Future DMs arrive only when fetched on their day.</td></tr><tr><td>Money</td><td>Committed sales include accepted and picked-up orders across all loaded dates. Realized sales mean picked-up orders. Cancelled/rejected requests generate no sales. Net subtracts booked helpers only, not unspecified ingredient costs.</td></tr></table>
+<h2>Verification</h2><p>Run <code>python test_apps.py</code> from Lecture9. Tests use temporary databases and never modify either real bakery.db. They cover all 25 messages, repeated imports, deadline boundaries, changes, cancellation, capacity conflicts, helper recovery, sequential batch acceptance, rejection, pickup, sales and day progression. See Test_Results.txt for the actual run.</p><p>The apps are intentionally local. The app runs locally; GitHub stores source code. Classroom submission is performed separately by the student.</p>

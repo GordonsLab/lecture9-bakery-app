@@ -1,0 +1,8 @@
+*.db
+*.db-*
+*.sqlite*
+__pycache__/
+*.pyc
+.env
+.env.*
+Test_Results.txt
